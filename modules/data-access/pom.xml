@@ -1,0 +1,86 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.zanclus.openapi.vertx.data</groupId>
+    <artifactId>vertx-openapi-jooq-data-access</artifactId>
+    <packaging>jar</packaging>
+    <name>vertx-openapi-jooq-data-access</name>
+    <version>1.0-SNAPSHOT</version>
+    <parent>
+        <groupId>com.zanclus.openapi.vertx</groupId>
+        <artifactId>vertx-openapi-jooq</artifactId>
+        <relativePath>../../pom.xml</relativePath>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>com.zanclus.openapi.vertx.models</groupId>
+            <artifactId>vertx-openapi-jooq-models</artifactId>
+            <version>${parent.version}</version>
+        </dependency>
+        <dependency>
+            <!-- Use org.jooq            for the Open Source Edition
+                     org.jooq.pro        for commercial editions,
+                     org.jooq.pro-java-8 for commercial editions with Java 8 support,
+                     org.jooq.pro-java-6 for commercial editions with Java 6 support,
+                     org.jooq.trial      for the free trial edition
+
+                 Note: Only the Open Source Edition is hosted on Maven Central.
+                       Import the others manually from your distribution -->
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-meta-extensions-hibernate</artifactId>
+            <version>3.14.9</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>3.14.1</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generator>
+                                <database>
+                                    <name>org.jooq.meta.extensions.jpa.JPADatabase</name>
+                                    <properties>
+
+                                        <!-- A comma separated list of Java packages, that contain your entities -->
+                                        <property>
+                                            <key>packages</key>
+                                            <value>com.zanclus.openapi.vertx.models</value>
+                                        </property>
+
+                                        <!-- Whether JPA 2.1 AttributeConverters should be auto-mapped to jOOQ Converters.
+                                             Custom <forcedType/> configurations will have a higher priority than these auto-mapped converters.
+                                             This defaults to true. -->
+                                        <property>
+                                            <key>useAttributeConverters</key>
+                                            <value>true</value>
+                                        </property>
+
+                                        <!-- The default schema for unqualified objects:
+
+                                             - public: all unqualified objects are located in the PUBLIC (upper case) schema
+                                             - none: all unqualified objects are located in the default schema (default)
+
+                                             This configuration can be overridden with the schema mapping feature -->
+                                        <property>
+                                            <key>unqualifiedSchema</key>
+                                            <value>none</value>
+                                        </property>
+                                    </properties>
+                                </database>
+                            </generator>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
