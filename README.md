@@ -11,3 +11,9 @@ for [Vert.x](https://vertx.io) using [OpenAPI Generator](https://openapi-generat
 mvn clean verify
 ```
 
+## Run application locally
+
+```bash
+mvn vertx:run -pl modules/api
+```
+
