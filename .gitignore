@@ -3,3 +3,4 @@
 .mvn/wrapper/*.jar
 modules/*/.openapi-generator/**/*
 **/*.log
+modules/models/src/main/java/**/*

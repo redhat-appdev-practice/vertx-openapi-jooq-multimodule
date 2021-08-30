@@ -1,0 +1,7 @@
+spec:
+ template:
+   spec:
+     containers:
+       - env:
+         - name: JAVA_ARGS
+           value: "-Dvertx.setClassPathResolvingEnabled=true -Dvertx.setFileCachingEnabled=true -cluster run com.redhat.runtimes.api.MainVerticle"
