@@ -1,24 +1,16 @@
 package com.redhat.runtimes.api;
 
-import com.redhat.runtimes.exceptions.NotImplementedException;
 import com.redhat.runtimes.services.TodosService;
 import com.redhat.runtimes.services.TodosServiceImpl;
 import com.redhat.runtimes.services.UserService;
 import com.redhat.runtimes.services.UserServiceImpl;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.file.FileSystemOptions;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.api.service.RouteToEBServiceHandler;
 import io.vertx.core.Promise;
-import io.vertx.ext.web.handler.ErrorHandler;
-import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.serviceproxy.ServiceBinder;
-
-import java.io.PrintStream;
 
 /**
  * Main Vert.x Verticle, entrypoint for this application
@@ -83,23 +75,5 @@ public class MainVerticle extends AbstractVerticle {
 		Router parentRouter = Router.router(vertx);
 		parentRouter.mountSubRouter("/api/v1", routerBuilder.createRouter());
 		return Future.succeededFuture(parentRouter);
-	}
-
-	/**
-	 * Converts
-	 * @param ctx
-	 */
-	private void notImplementedHandler(RoutingContext ctx) {
-		if (ctx.failed()) {
-			var e = ctx.failure();
-			ctx.failure().printStackTrace(new PrintStream(System.out));
-			if (e instanceof NotImplementedException) {
-				var result = new JsonObject().put("error", new JsonObject().put("code", 500).put("message", e.getMessage()));
-				ctx.response().putHeader("Content-Type", "application/json");
-				ctx.response().end(result.toBuffer());
-			} else {
-				ErrorHandler.create(vertx).handle(ctx);
-			}
-		}
 	}
 }
