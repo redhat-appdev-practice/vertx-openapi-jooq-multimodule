@@ -38,6 +38,7 @@ paths:
                   $ref: "#/components/schemas/Todo"
           description: Successful response - returns an array of `Todo` entities.
       operationId: gettodos
+      x-vertx-event-bus: api.todos
       tags:
         - todos
       summary: List All todos
@@ -58,6 +59,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Todo"
       operationId: createTodo
+      x-vertx-event-bus: api.todos
       tags:
         - todos
       summary: Create a Todo
@@ -79,6 +81,7 @@ paths:
       security:
         - KeyCloak: []
       operationId: getTodo
+      x-vertx-event-bus: api.todos
       tags:
         - todos
       summary: Get a Todo
@@ -99,6 +102,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Todo"
       operationId: updateTodo
+      x-vertx-event-bus: api.todos
       tags:
         - todos
       summary: Update a Todo
@@ -108,6 +112,7 @@ paths:
         "204":
           description: Successful response.
       operationId: deleteTodo
+      x-vertx-event-bus: api.todos
       tags:
         - todos
       summary: Delete a Todo
@@ -132,6 +137,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
       operationId: getUserProfile
+      x-vertx-event-bus: api.user
       description: Return the current user profile
       tags:
         - user
