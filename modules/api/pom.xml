@@ -104,6 +104,10 @@
                 <configuration>
                     <redeploy>true</redeploy>
                     <verticle>com.redhat.runtimes.api.MainVerticle</verticle>
+                    <runArgs>
+                        <runArg>-Dvertx.setClassPathResolvingEnabled=true</runArg>
+                        <runArg>-Dvertx.setFileCachingEnabled=true</runArg>
+                    </runArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -115,6 +119,18 @@
                 <groupId>org.eclipse.jkube</groupId>
                 <artifactId>openshift-maven-plugin</artifactId>
                 <version>${jkube.version}</version>
+                <configuration>
+                    <resources>
+                        <labels>
+                            <deployment>
+                                <property>
+                                    <name>app.openshift.io/runtime</name>
+                                    <value>vertx</value>
+                                </property>
+                            </deployment>
+                        </labels>
+                    </resources>
+                </configuration>
             </plugin>
         </plugins>
     </build>

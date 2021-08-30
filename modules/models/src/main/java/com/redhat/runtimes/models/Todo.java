@@ -16,7 +16,7 @@ import javax.validation.constraints.*;
  * A Todo list item
  */
 @ApiModel(description = "A Todo list item")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2021-08-29T11:21:43.041564-04:00[America/New_York]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2021-08-30T08:53:45.674233-04:00[America/New_York]")
 @javax.persistence.Entity
 @javax.persistence.Table(name = "todos")
 public class Todo  implements Serializable {

@@ -7,7 +7,7 @@ import com.redhat.runtimes.services.UserService;
 import com.redhat.runtimes.services.UserServiceImpl;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -16,7 +16,6 @@ import io.vertx.core.Promise;
 import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.ext.web.openapi.Operation;
 import io.vertx.ext.web.openapi.RouterBuilder;
-import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.ServiceBinder;
 
 import java.io.PrintStream;
@@ -32,15 +31,7 @@ public class MainVerticle extends AbstractVerticle {
 	 * @param routeBuilder The OpenAPIv3 RouterBuilder instance
 	 */
 	Future<RouterBuilder> mountRoutes(RouterBuilder routeBuilder) {
-		for (Operation operation : routeBuilder.operations()) {
-			String tag = operation.getOperationModel().getJsonArray("tags").getString(0);
-			String operationId = operation.getOperationModel().getString("operationId");
-			String busAddress = String.format("api.%s", tag);
-			var handler = RouteToEBServiceHandler.build(vertx.eventBus(), busAddress, operationId);
-			routeBuilder.operation(operationId)
-					.failureHandler(this::notImplementedHandler)
-					.handler(handler);
-		}
+		routeBuilder.mountServicesFromExtensions();
 
 		routeBuilder.securityHandler("KeyCloak", this::authHandler);
 
@@ -66,7 +57,7 @@ public class MainVerticle extends AbstractVerticle {
 		ServiceBinder userSvcBinder = new ServiceBinder(vertx);
 		userSvcBinder.setAddress("api.user").register(UserService.class, userService);
 
-		RouterBuilder.create(vertx, "src/main/resources/openapi.yml")
+		RouterBuilder.create(vertx, "openapi.yml")
 				.compose(this::mountRoutes)
 				.compose(this::buildParentRouter)
 				.compose(this::buildHttpServer)
