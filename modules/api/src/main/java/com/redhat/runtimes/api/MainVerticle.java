@@ -53,8 +53,7 @@ public class MainVerticle extends AbstractVerticle {
 				.compose(this::mountRoutes)
 				.compose(this::buildParentRouter)
 				.compose(this::buildHttpServer)
-				.onFailure(startPromise::fail)
-				.onSuccess(startPromise::complete);
+				.onComplete(startPromise);
 	}
 
 	/**
