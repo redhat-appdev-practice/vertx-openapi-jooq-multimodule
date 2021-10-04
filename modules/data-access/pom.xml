@@ -94,6 +94,13 @@
                                     <value>none</value>
                                 </property>
                             </properties>
+                            <forcedTypes>
+                                <forcedType>
+                                    <userType>java.util.UUID</userType>
+                                    <converter>com.redhat.runtimes.data.access.converters.UUIDConverter</converter>
+                                    <includeExpression>.*\.ID</includeExpression>
+                                </forcedType>
+                            </forcedTypes>
                         </database>
                         <target>
                             <packageName>com.redhat.runtimes.data.access</packageName>

@@ -1,5 +1,7 @@
 package com.redhat.runtimes.services;
 
+import com.redhat.runtimes.data.access.tables.Todos;
+import com.redhat.runtimes.data.access.tables.Users;
 import com.redhat.runtimes.data.access.tables.daos.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -9,7 +11,7 @@ import io.vertx.ext.web.api.service.ServiceResponse;
 import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
 
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends AbstractService implements UserService {
 	
 	UsersDao dao;
 	
@@ -19,6 +21,7 @@ public class UserServiceImpl implements UserService {
 	
 	@Override
 	public void getUserProfile(ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
-		resultHandler.handle(Future.failedFuture("Not yet implemented: getUserProfile"));
+		dao.findOneByCondition(Users.USERS.PREFERREDUSERNAME.eq(context.getUser().getString("username")))
+				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
 	}
 }
