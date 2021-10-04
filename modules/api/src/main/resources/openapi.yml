@@ -147,6 +147,13 @@ components:
       title: User
       description: User information
       properties:
+        id:
+          format: uuid
+          type: string
+          x-java-field-annotations:
+            - '@javax.persistence.Id'
+            - '@javax.persistence.GeneratedValue(generator = "UUID")'
+            - '@javax.persistence.Column(name = "id", updatable = false, nullable = false)'
         family_name:
           type: string
         given_name:
@@ -155,6 +162,9 @@ components:
           type: string
         preferred_username:
           type: string
+      x-java-class-annotations:
+        - "@javax.persistence.Entity"
+        - '@javax.persistence.Table(name = "users")'
     Todo:
       title: Todo
       description: A Todo list item
