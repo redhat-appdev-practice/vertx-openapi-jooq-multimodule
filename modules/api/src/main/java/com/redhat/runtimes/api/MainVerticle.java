@@ -10,7 +10,14 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.pgclient.PgPool;
 import io.vertx.serviceproxy.ServiceBinder;
+import io.vertx.sqlclient.PoolOptions;
+import io.vertx.sqlclient.SqlClient;
+import org.jooq.Configuration;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DefaultConfiguration;
 
 /**
  * Main Vert.x Verticle, entrypoint for this application
@@ -41,11 +48,24 @@ public class MainVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
-		TodosService todoService = new TodosServiceImpl();
+		
+		
+		Configuration jooqConfig = new DefaultConfiguration();
+		jooqConfig.set(SQLDialect.POSTGRES);
+		
+		PgConnectOptions poolConfig = new PgConnectOptions(vertx.getOrCreateContext().config().getJsonObject("db"));
+		
+		PoolOptions poolOptions = new PoolOptions()
+				.setMaxSize(5);
+		
+		SqlClient client = PgPool.client(poolConfig, poolOptions);
+		
+		
+		TodosService todoService = new TodosServiceImpl(jooqConfig, client);
 		ServiceBinder todoSvcBinder = new ServiceBinder(vertx);
 		todoSvcBinder.setAddress("api.todos").register(TodosService.class, todoService);
 
-		UserService userService = new UserServiceImpl();
+		UserService userService = new UserServiceImpl(jooqConfig, client);
 		ServiceBinder userSvcBinder = new ServiceBinder(vertx);
 		userSvcBinder.setAddress("api.user").register(UserService.class, userService);
 
@@ -53,8 +73,7 @@ public class MainVerticle extends AbstractVerticle {
 				.compose(this::mountRoutes)
 				.compose(this::buildParentRouter)
 				.compose(this::buildHttpServer)
-				.onFailure(startPromise::fail)
-				.onSuccess(startPromise::complete);
+				.onComplete(startPromise);
 	}
 
 	/**

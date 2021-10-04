@@ -65,6 +65,10 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-infinispan</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-pg-client</artifactId>
+        </dependency>
         <!-- CHOOSE THE DATABASE DRIVER OR INSERT YOUR OWN
             <dependency>
               <groupId>io.reactiverse</groupId>
@@ -88,11 +92,6 @@
               <artifactId>vertx-jdbc-client</artifactId>
             </dependency>
         -->
-        <dependency>
-            <groupId>io.github.jklingsporn</groupId>
-            <artifactId>vertx-jooq-classic-reactive</artifactId>
-            <version>6.2.0</version>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
