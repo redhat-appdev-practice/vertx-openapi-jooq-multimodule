@@ -8,12 +8,16 @@ import io.vertx.config.ConfigChange;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
+import io.vertx.config.yaml.YamlProcessor;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.core.Promise;
+import io.vertx.ext.web.handler.HttpException;
+import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
@@ -23,19 +27,24 @@ import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DefaultConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * Main Vert.x Verticle, entrypoint for this application
  */
 public class MainVerticle extends AbstractVerticle {
 	
+	private static final Logger LOG = LoggerFactory.getLogger(MainVerticle.class);
+	
 	public static final Configuration JOOQ_CONFIG = new DefaultConfiguration().set(SQLDialect.POSTGRES);
 	
 	private JsonObject currentConfig = new JsonObject();
 	
 	/**
-	 * Iterate over the operations in the API Spec and delegate the handlers to the
-	 * Web API Services
+	 * Mount the OpenAPI operations to the WebAPIServiceBindings
 	 * @param routeBuilder The OpenAPIv3 RouterBuilder instance
 	 */
 	Future<RouterBuilder> mountRoutes(RouterBuilder routeBuilder) {
@@ -58,31 +67,42 @@ public class MainVerticle extends AbstractVerticle {
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		
+		LOG.info("Is Classpath resolving enabled: {}", System.getProperty("vertx.setClassPathResolvingEnabled"));
+		LOG.info("Is file caching enabled: {}", System.getProperty("vertx.setFileCachingEnabled"));
+		
 		vertx.fileSystem()                 // Use the Vert.x Async Filesystem object
-				.exists("./config.json")      // to check if the ./config.json file exists
-				.onSuccess(this::initConfig); // and pass the result (true/false) to the
-		
-		SqlClient client = getSqlClient();
-		
-		bindWebServices(client);
-		
-		RouterBuilder.create(vertx, "openapi.yml")
+				.exists("./config.json")       // to check if the ./config.json file exists
+				.compose(this::initConfig)     // and pass the result (true/false) to the
+        .compose(config -> {
+					this.currentConfig = config;
+	        LOG.info("Configuration: {}", currentConfig.encodePrettily());
+					return Future.succeededFuture(getSqlClient());
+        })
+        .compose(client -> {
+	        bindWebServices(client);
+					return Future.succeededFuture();
+        })
+        .compose(v -> RouterBuilder.create(vertx, "openapi.yml"))
 				.compose(this::mountRoutes)
 				.compose(this::buildParentRouter)
 				.compose(this::buildHttpServer)
 				.onComplete(startPromise);
 	}
 	
-	private Future<Void> initConfig(boolean hasConfigJsonFile) {
+	private Future<JsonObject> initConfig(boolean hasConfigJsonFile) {
+		
+		LOG.info("Was config file found: {}", hasConfigJsonFile);
+		
 		ConfigRetrieverOptions configOpts = new ConfigRetrieverOptions();
 		if (hasConfigJsonFile) {
 			// If the config file exists
 			// add that config store to our Config
 			configOpts.addStore(initConfigWatcher());
 		}
-		ConfigRetriever.create(vertx, configOpts)       // Create the config retriever
+		ConfigRetriever configRetriever = ConfigRetriever.create(vertx, configOpts);
+		configRetriever       // Create the config retriever
 				.listen(this::loadNewConfig);    // As create a callback to listen for configuration changes
-		return Future.succeededFuture();                // Return a completed future
+		return configRetriever.getConfig();  // Return a completed future
 	}
 	
 	private ConfigStoreOptions initEnvironmentStore() {
@@ -117,8 +137,7 @@ public class MainVerticle extends AbstractVerticle {
 		PoolOptions poolOptions = new PoolOptions()
 				.setMaxSize(5);
 		
-		SqlClient client = PgPool.client(poolConfig, poolOptions);
-		return client;
+		return PgPool.client(vertx, poolConfig, poolOptions);
 	}
 	
 	/**
@@ -137,7 +156,46 @@ public class MainVerticle extends AbstractVerticle {
 	 */
 	private Future<Router> buildParentRouter(RouterBuilder routerBuilder) {
 		Router parentRouter = Router.router(vertx);
+		parentRouter.route().handler(ctx -> {
+			LOG.info("Request Log: {}", ctx.request().path());
+			ctx.next();
+		});
+		parentRouter.get("/swagger/swagger.json").handler(this::serveOpenAPISpec);
+		parentRouter.get("/swagger/").handler(this::filteredIndexPage);
+		parentRouter.get("/swagger/index.html").handler(this::filteredIndexPage);
+		final StaticHandler swaggerHandler = StaticHandler.create("webroot/META-INF/resources/webjars/swagger-ui/3.52.3/")
+	                                     .setAllowRootFileSystemAccess(true)
+				                               .setCachingEnabled(true)
+				                               .setIncludeHidden(true)
+				                               .setDirectoryListing(true);
+		parentRouter.route("/swagger/*").handler(swaggerHandler);
 		parentRouter.mountSubRouter("/api/v1", routerBuilder.createRouter());
 		return Future.succeededFuture(parentRouter);
+	}
+	
+	private void filteredIndexPage(RoutingContext ctx) {
+		vertx.fileSystem().readFile("webroot/META-INF/resources/webjars/swagger-ui/3.52.3/index.html")
+				.compose(b -> {
+					String html = b.toString(StandardCharsets.UTF_8);
+					String replacementUrl = ctx.request().absoluteURI().replaceAll("(index.html)?$", "swagger.json");
+					html = html.replaceAll("https://petstore.swagger.io/v2/swagger.json", replacementUrl);
+					ctx.response().putHeader("Content-Type", "text/html")
+							.end(html);
+					LOG.info("Replaced default swagger JSON URI: {}", replacementUrl);
+					return Future.succeededFuture();
+				});
+	}
+	
+	private void serveOpenAPISpec(RoutingContext ctx) {
+		vertx.fileSystem().readFile("openapi.yml")
+				                  .compose(yaml -> {
+														var processor = new YamlProcessor();
+														return processor.process(vertx, new JsonObject(), yaml);
+				                  })
+				                  .onSuccess(json -> {
+					                  ctx.response()
+							                  .putHeader("Content-Type", "application/json")
+							                  .end(json.toBuffer());
+				                  });
 	}
 }

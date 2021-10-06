@@ -1,0 +1,9 @@
+{
+  "db": {
+    "port": "5432",
+    "host": "localhost",
+    "database": "tododb",
+    "user": "tododb",
+    "password": "tododb"
+  }
+}

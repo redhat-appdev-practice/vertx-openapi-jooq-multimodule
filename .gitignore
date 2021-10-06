@@ -4,3 +4,5 @@
 modules/*/.openapi-generator/**/*
 **/*.log
 modules/models/src/main/java/**/*
+modules/api/src/main/resources/webroot/*
+!modules/api/src/main/resources/webroot/.gitkeep
