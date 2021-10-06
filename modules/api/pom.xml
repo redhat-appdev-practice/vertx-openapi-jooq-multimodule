@@ -69,6 +69,14 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-pg-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config-kubernetes-configmap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config</artifactId>
+        </dependency>
         <!-- CHOOSE THE DATABASE DRIVER OR INSERT YOUR OWN
             <dependency>
               <groupId>io.reactiverse</groupId>

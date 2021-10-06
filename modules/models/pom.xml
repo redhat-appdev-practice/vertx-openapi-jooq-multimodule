@@ -147,6 +147,22 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>de.jpdigital</groupId>
+                <artifactId>hibernate54-ddl-maven-plugin</artifactId>
+                <version>2.4.0</version>
+                <configuration>
+                    <dialects>POSTGRESQL</dialects>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>gen-ddl</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
                 <version>3.1.0</version>

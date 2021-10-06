@@ -4,8 +4,13 @@ import com.redhat.runtimes.services.TodosService;
 import com.redhat.runtimes.services.TodosServiceImpl;
 import com.redhat.runtimes.services.UserService;
 import com.redhat.runtimes.services.UserServiceImpl;
+import io.vertx.config.ConfigChange;
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.core.Promise;
@@ -23,7 +28,11 @@ import org.jooq.impl.DefaultConfiguration;
  * Main Vert.x Verticle, entrypoint for this application
  */
 public class MainVerticle extends AbstractVerticle {
-
+	
+	public static final Configuration JOOQ_CONFIG = new DefaultConfiguration().set(SQLDialect.POSTGRES);
+	
+	private JsonObject currentConfig = new JsonObject();
+	
 	/**
 	 * Iterate over the operations in the API Spec and delegate the handlers to the
 	 * Web API Services
@@ -49,33 +58,69 @@ public class MainVerticle extends AbstractVerticle {
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
 		
+		vertx.fileSystem()                 // Use the Vert.x Async Filesystem object
+				.exists("./config.json")      // to check if the ./config.json file exists
+				.onSuccess(this::initConfig); // and pass the result (true/false) to the
 		
-		Configuration jooqConfig = new DefaultConfiguration();
-		jooqConfig.set(SQLDialect.POSTGRES);
+		SqlClient client = getSqlClient();
 		
-		PgConnectOptions poolConfig = new PgConnectOptions(vertx.getOrCreateContext().config().getJsonObject("db"));
+		bindWebServices(client);
 		
-		PoolOptions poolOptions = new PoolOptions()
-				.setMaxSize(5);
-		
-		SqlClient client = PgPool.client(poolConfig, poolOptions);
-		
-		
-		TodosService todoService = new TodosServiceImpl(jooqConfig, client);
-		ServiceBinder todoSvcBinder = new ServiceBinder(vertx);
-		todoSvcBinder.setAddress("api.todos").register(TodosService.class, todoService);
-
-		UserService userService = new UserServiceImpl(jooqConfig, client);
-		ServiceBinder userSvcBinder = new ServiceBinder(vertx);
-		userSvcBinder.setAddress("api.user").register(UserService.class, userService);
-
 		RouterBuilder.create(vertx, "openapi.yml")
 				.compose(this::mountRoutes)
 				.compose(this::buildParentRouter)
 				.compose(this::buildHttpServer)
 				.onComplete(startPromise);
 	}
-
+	
+	private Future<Void> initConfig(boolean hasConfigJsonFile) {
+		ConfigRetrieverOptions configOpts = new ConfigRetrieverOptions();
+		if (hasConfigJsonFile) {
+			// If the config file exists
+			// add that config store to our Config
+			configOpts.addStore(initConfigWatcher());
+		}
+		ConfigRetriever.create(vertx, configOpts)       // Create the config retriever
+				.listen(this::loadNewConfig);    // As create a callback to listen for configuration changes
+		return Future.succeededFuture();                // Return a completed future
+	}
+	
+	private ConfigStoreOptions initEnvironmentStore() {
+		return new ConfigStoreOptions()
+				.setType("env");
+	}
+	
+	private void loadNewConfig(ConfigChange change) {
+		this.currentConfig.mergeIn(change.getNewConfiguration());
+	}
+	
+	private void bindWebServices(SqlClient client) {
+		TodosService todoService = new TodosServiceImpl(JOOQ_CONFIG, client);
+		ServiceBinder todoSvcBinder = new ServiceBinder(vertx);
+		todoSvcBinder.setAddress("api.todos").register(TodosService.class, todoService);
+		
+		UserService userService = new UserServiceImpl(JOOQ_CONFIG, client);
+		ServiceBinder userSvcBinder = new ServiceBinder(vertx);
+		userSvcBinder.setAddress("api.user").register(UserService.class, userService);
+	}
+	
+	private ConfigStoreOptions initConfigWatcher() {
+		return new ConfigStoreOptions()        // New ConfigStoreOptions object
+				.setType("file")          // of type 'file'
+				.setFormat("json")        // and of format 'json'
+				.setConfig(new JsonObject().put("path", "./config.json"));
+	}
+	
+	private SqlClient getSqlClient() {
+		PgConnectOptions poolConfig = new PgConnectOptions(currentConfig.getJsonObject("db"));
+		
+		PoolOptions poolOptions = new PoolOptions()
+				.setMaxSize(5);
+		
+		SqlClient client = PgPool.client(poolConfig, poolOptions);
+		return client;
+	}
+	
 	/**
 	 * Given a {@link Router}, use it as the handler for a newly created HTTP Server
 	 * @param router The {@link Router} for handling requests
