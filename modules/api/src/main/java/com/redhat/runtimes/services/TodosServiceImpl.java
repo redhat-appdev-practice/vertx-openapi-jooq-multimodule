@@ -10,14 +10,26 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.api.service.ServiceRequest;
 import io.vertx.ext.web.api.service.ServiceResponse;
+import io.vertx.ext.web.handler.HttpException;
 import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InvalidClassException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class TodosServiceImpl implements TodosService {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(TodosServiceImpl.class);
+	
+	SimpleDateFormat ISO8601DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 	
 	TodosDao dao;
 	
@@ -35,7 +47,7 @@ public class TodosServiceImpl implements TodosService {
 	}
 	
 	Future<ServiceResponse> mapErrorToServiceResponse(Throwable throwable) {
-		return Future.failedFuture(throwable);
+		return Future.failedFuture(new HttpException(500, throwable));
 	}
 	
 	public TodosServiceImpl(Configuration config, SqlClient client) {
@@ -51,10 +63,29 @@ public class TodosServiceImpl implements TodosService {
 	
 	@Override
 	public void createTodo(JsonObject body, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
-		Todos todo = body.mapTo(Todos.class);
-		dao.insertReturningPrimary(todo)
-				.compose(dao::findOneById)
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
+		LOG.info("Todo creation");
+		try {
+			Todos todo = new Todos();
+			todo.setAuthor(body.getString("author"));
+			Date created = ISO8601DATEFORMAT.parse(body.getString("created"));
+			todo.setCreated(LocalDateTime.ofInstant(created.toInstant(), ZoneId.systemDefault()));
+			todo.setComplete(Boolean.FALSE);
+			todo.setDescription(body.getString("description"));
+			Date dueDate = ISO8601DATEFORMAT.parse(body.getString("dueDate"));
+			todo.setDuedate(LocalDateTime.ofInstant(dueDate.toInstant(), ZoneId.systemDefault()));
+			todo.setTitle(body.getString("title"));
+			
+			dao.insertReturningPrimary(todo)
+					.compose(id -> {
+						LOG.info("New Todo ID: {}", id.toString());
+						return Future.succeededFuture(id);
+					})
+					.compose(dao::findOneById)
+					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
+		} catch (Throwable t) {
+			resultHandler.handle(Future.failedFuture(new HttpException(500, t)));
+			LOG.error(t.getLocalizedMessage(), t);
+		}
 	}
 
 	@Override

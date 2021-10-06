@@ -105,11 +105,6 @@ public class MainVerticle extends AbstractVerticle {
 		return configRetriever.getConfig();  // Return a completed future
 	}
 	
-	private ConfigStoreOptions initEnvironmentStore() {
-		return new ConfigStoreOptions()
-				.setType("env");
-	}
-	
 	private void loadNewConfig(ConfigChange change) {
 		this.currentConfig.mergeIn(change.getNewConfiguration());
 	}
@@ -157,8 +152,7 @@ public class MainVerticle extends AbstractVerticle {
 	private Future<Router> buildParentRouter(RouterBuilder routerBuilder) {
 		Router parentRouter = Router.router(vertx);
 		parentRouter.route().handler(ctx -> {
-			LOG.info("Request Log: {}", ctx.request().path());
-			ctx.next();
+			logRequests(ctx);
 		});
 		parentRouter.get("/swagger/swagger.json").handler(this::serveOpenAPISpec);
 		parentRouter.get("/swagger/").handler(this::filteredIndexPage);
@@ -171,6 +165,11 @@ public class MainVerticle extends AbstractVerticle {
 		parentRouter.route("/swagger/*").handler(swaggerHandler);
 		parentRouter.mountSubRouter("/api/v1", routerBuilder.createRouter());
 		return Future.succeededFuture(parentRouter);
+	}
+	
+	private void logRequests(RoutingContext ctx) {
+		LOG.info("{}: {}", ctx.request().method().toString(), ctx.request().path());
+		ctx.next();
 	}
 	
 	private void filteredIndexPage(RoutingContext ctx) {
