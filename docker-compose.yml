@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  db:
+    image: docker.io/postgres:latest
+    environment:
+      POSTGRES_PASSWORD: tododb
+      POSTGRES_USER: tododb
+      POSTGRES_DB: todo
+
