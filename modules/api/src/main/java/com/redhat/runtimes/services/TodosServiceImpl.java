@@ -3,33 +3,33 @@ package com.redhat.runtimes.services;
 import com.redhat.runtimes.data.access.tables.daos.TodosDao;
 import com.redhat.runtimes.data.access.tables.pojos.Todos;
 import io.github.jklingsporn.vertx.jooq.shared.internal.VertxPojo;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.api.service.ServiceRequest;
 import io.vertx.ext.web.api.service.ServiceResponse;
-import io.vertx.ext.web.handler.HttpException;
+import io.vertx.pgclient.PgException;
 import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InvalidClassException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
+
+import static io.netty.handler.codec.http.HttpResponseStatus.CONFLICT;
+import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 
 public class TodosServiceImpl implements TodosService {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(TodosServiceImpl.class);
-	
-	SimpleDateFormat ISO8601DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
 	
 	TodosDao dao;
 	
@@ -46,8 +46,28 @@ public class TodosServiceImpl implements TodosService {
 		}
 	}
 	
+	ServiceResponse errorResponse(HttpResponseStatus status, JsonObject body) {
+		return errorResponse(status, body.toBuffer());
+	}
+	
+	ServiceResponse errorResponse(HttpResponseStatus status, Buffer body) {
+		ServiceResponse response = new ServiceResponse();
+		response.setStatusMessage(status.reasonPhrase())
+				.setStatusCode(status.code())
+				.putHeader("Content-Type", "application/json")
+				.setPayload(body);
+		return response;
+	}
+	
 	Future<ServiceResponse> mapErrorToServiceResponse(Throwable throwable) {
-		return Future.failedFuture(new HttpException(500, throwable));
+		if (throwable instanceof PgException pge) {
+			LOG.error("Failed interaction with the database: {}", pge.getMessage());
+			if (pge.getErrorMessage().startsWith("duplicate key value violates unique constraint")) {
+				return Future.succeededFuture(errorResponse(CONFLICT, Buffer.buffer(pge.getMessage())));
+			}
+		}
+		LOG.error(throwable.getLocalizedMessage(), throwable);
+		return Future.succeededFuture(errorResponse(INTERNAL_SERVER_ERROR, new JsonObject().put("error", throwable.getLocalizedMessage())));
 	}
 	
 	public TodosServiceImpl(Configuration config, SqlClient client) {
@@ -66,24 +86,32 @@ public class TodosServiceImpl implements TodosService {
 		LOG.info("Todo creation");
 		try {
 			Todos todo = new Todos();
+			UUID id;
+			if (body.containsKey("id")) {
+			  id = UUID.fromString(body.getString("id"));
+			} else {
+				id = UUID.randomUUID();
+			}
+			todo.setId(id);
 			todo.setAuthor(body.getString("author"));
-			Date created = ISO8601DATEFORMAT.parse(body.getString("created"));
-			todo.setCreated(LocalDateTime.ofInstant(created.toInstant(), ZoneId.systemDefault()));
+			LocalDateTime created = LocalDateTime.parse(body.getString("created"), DateTimeFormatter.ISO_DATE_TIME);
+			todo.setCreated(created);
 			todo.setComplete(Boolean.FALSE);
 			todo.setDescription(body.getString("description"));
-			Date dueDate = ISO8601DATEFORMAT.parse(body.getString("dueDate"));
-			todo.setDuedate(LocalDateTime.ofInstant(dueDate.toInstant(), ZoneId.systemDefault()));
+			LocalDateTime dueDate = LocalDateTime.parse(body.getString("due_date"), DateTimeFormatter.ISO_DATE_TIME);
+			todo.setDuedate(dueDate);
 			todo.setTitle(body.getString("title"));
 			
 			dao.insertReturningPrimary(todo)
-					.compose(id -> {
+					.compose(returnedId -> {
 						LOG.info("New Todo ID: {}", id.toString());
 						return Future.succeededFuture(id);
 					})
 					.compose(dao::findOneById)
-					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
+					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+					.onComplete(resultHandler);
 		} catch (Throwable t) {
-			resultHandler.handle(Future.failedFuture(new HttpException(500, t)));
+			resultHandler.handle(Future.failedFuture(t));
 			LOG.error(t.getLocalizedMessage(), t);
 		}
 	}

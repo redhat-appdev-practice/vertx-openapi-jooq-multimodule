@@ -1,10 +1,15 @@
 package com.redhat.runtimes.data.access.converters;
 
 import org.jooq.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
 public class UUIDConverter implements Converter {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(UUIDConverter.class);
+	
 	/**
 	 * Convert a database object to a user object
 	 *
@@ -13,7 +18,18 @@ public class UUIDConverter implements Converter {
 	 */
 	@Override
 	public Object from(Object databaseObject) {
-		return UUID.fromString((String)databaseObject);
+		LOG.info("Object Type: {}", databaseObject.getClass().getCanonicalName());
+		if (databaseObject instanceof String s) {
+			try {
+				UUID retVal = UUID.fromString(s);
+				return retVal;
+			} catch (IllegalArgumentException iae) {
+				LOG.error("Unable to parse UUID from string '{}'", s);
+				return null;
+			}
+		} else {
+			return null;
+		}
 	}
 	
 	/**
@@ -24,7 +40,11 @@ public class UUIDConverter implements Converter {
 	 */
 	@Override
 	public Object to(Object userObject) {
-		return userObject.toString();
+		if (userObject != null) {
+			return userObject.toString();
+		} else {
+			return "";
+		}
 	}
 	
 	/**

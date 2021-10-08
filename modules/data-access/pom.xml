@@ -29,6 +29,11 @@
             <artifactId>vertx-jooq-classic-reactive</artifactId>
             <version>${vertx.jooq.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.32</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -80,7 +85,7 @@
                                      This defaults to true. -->
                                 <property>
                                     <key>useAttributeConverters</key>
-                                    <value>true</value>
+                                    <value>false</value>
                                 </property>
                     
                                 <!-- The default schema for unqualified objects:
