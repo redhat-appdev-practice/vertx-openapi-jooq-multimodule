@@ -174,14 +174,6 @@
                                     <includeTypes>.*VARCHAR\(40\).*</includeTypes>
                                     <includeExpression>.*</includeExpression>
                                 </forcedType>
-<!--                                <forcedType>
-                                    <userType>java.time.Instant</userType>
-                                    <objectType>COLUMN</objectType>
-                                    <converter>com.redhat.runtimes.data.access.converters.DateTimeConverter</converter>
-                                    <includeTypes>.*IMESTAMP.*</includeTypes>
-                                    <nullability>ALL</nullability>
-                                    <includeExpression>.*</includeExpression>
-                                </forcedType>-->
                             </forcedTypes>
                         </database>
                         <target>
