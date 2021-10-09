@@ -13,17 +13,22 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InvalidClassException;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 
 public abstract class AbstractService {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractService.class);
-
+	public static final String ERROR = "error";
+	public static final String DELETED = "deleted";
+	
 	Future<ServiceResponse> mapToServiceResponse(Object results) {
-		if (results instanceof Integer) {
-			return Future.succeededFuture(ServiceResponse.completedWithJson(new JsonObject().put("deleted", results)));
-		} else if (results instanceof List l) {
+		if (results == null) {
+			return Future.succeededFuture(errorResponse(NOT_FOUND, new JsonObject().put(ERROR, NOT_FOUND.reasonPhrase())));
+		} else if (results instanceof Integer) {
+				return Future.succeededFuture(ServiceResponse.completedWithJson(new JsonObject().put(DELETED, results)));
+			} else if (results instanceof List l) {
 			JsonArray retVal = new JsonArray();
 			for (Object o: l) {
 				if (o instanceof VertxPojo p) {
@@ -55,13 +60,16 @@ public abstract class AbstractService {
 		if (throwable instanceof PgException pge) {
 			LOG.error("Failed interaction with the database: {}", pge.getMessage());
 			if (pge.getErrorMessage().startsWith("duplicate key value violates unique constraint")) {
-				return Future.succeededFuture(errorResponse(CONFLICT, Buffer.buffer(pge.getMessage())));
+				return Future.succeededFuture(errorResponse(CONFLICT, new JsonObject().put(ERROR, pge.getErrorMessage())));
 			}
 		}
 		if (throwable instanceof IllegalArgumentException iae) {
 			return Future.succeededFuture(errorResponse(BAD_REQUEST, Buffer.buffer(iae.getLocalizedMessage())));
 		}
+		if (throwable instanceof NoSuchElementException) {
+			return Future.succeededFuture(errorResponse(NOT_FOUND, new JsonObject().put(ERROR, NOT_FOUND.reasonPhrase())));
+		}
 		LOG.error(throwable.getLocalizedMessage(), throwable);
-		return Future.succeededFuture(errorResponse(INTERNAL_SERVER_ERROR, new JsonObject().put("error", throwable.getLocalizedMessage())));
+		return Future.succeededFuture(errorResponse(INTERNAL_SERVER_ERROR, new JsonObject().put(ERROR, throwable.getLocalizedMessage())));
 	}
 }

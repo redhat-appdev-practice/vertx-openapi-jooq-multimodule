@@ -13,7 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>openapi-vertx-todo-api</name>
     <properties>
-        <vertx-maven-plugin.version>1.0.22</vertx-maven-plugin.version>
+        <vertx-maven-plugin.version>1.0.25</vertx-maven-plugin.version>
         <vertx.version>4.1.4</vertx.version>
         <jkube.version>1.3.0</jkube.version>
         <jkube.enricher.jkube-service.type>NodePort</jkube.enricher.jkube-service.type>
@@ -30,11 +30,6 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>com.redhat.runtimes.vertx.models</groupId>
-            <artifactId>openapi-vertx-todo-models</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
         <dependency>
             <groupId>com.redhat.runtimes.vertx.data</groupId>
             <artifactId>openapi-vertx-todo-data-access</artifactId>
@@ -96,6 +91,11 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
+            <version>3.52.3</version>
+        </dependency>
 <!--        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -134,39 +134,41 @@
             **
             *******
             -->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-dependency-plugin</artifactId>-->
+<!--                <version>3.2.0</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>unpack</id>-->
+<!--                        <phase>generate-resources</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>unpack</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <artifactItems>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>org.webjars</groupId>-->
+<!--                                    <artifactId>swagger-ui</artifactId>-->
+<!--                                    <version>3.52.3</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/src/main/resources/webroot</outputDirectory>-->
+<!--                                    <destFileName>optional-new-name.jar</destFileName>-->
+<!--                                    <includes>META-INF/resources/webjars/swagger-ui/3.52.3/**/*</includes>-->
+<!--                                </artifactItem>-->
+<!--                            </artifactItems>-->
+<!--                            <outputDirectory>${project.basedir}/src/main/resources/webroot</outputDirectory>-->
+<!--                            <overWriteReleases>true</overWriteReleases>-->
+<!--                            <overWriteSnapshots>true</overWriteSnapshots>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <id>unpack</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.webjars</groupId>
-                                    <artifactId>swagger-ui</artifactId>
-                                    <version>3.52.3</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/src/main/resources/webroot</outputDirectory>
-                                    <destFileName>optional-new-name.jar</destFileName>
-                                    <includes>META-INF/resources/webjars/swagger-ui/3.52.3/**/*</includes>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.basedir}/src/main/resources/webroot</outputDirectory>
-                            <overWriteReleases>true</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.version}</version>
                 <configuration>
                     <annotationProcessors>
                         <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
@@ -190,6 +192,7 @@
                     <redeploy>true</redeploy>
                     <verticle>com.redhat.runtimes.api.MainVerticle</verticle>
                     <launcher>com.redhat.runtimes.Launcher</launcher>
+                    <stripWebJarVersion>true</stripWebJarVersion>
                 </configuration>
             </plugin>
             <plugin>

@@ -37,6 +37,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/Todo"
           description: Successful response - returns an array of `Todo` entities.
+        default:
+          $ref: "#/components/responses/Error"
       operationId: gettodos
       x-vertx-event-bus: api.todos
       tags:
@@ -58,6 +60,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Todo"
+        default:
+          $ref: "#/components/responses/Error"
       operationId: createTodo
       x-vertx-event-bus: api.todos
       tags:
@@ -78,6 +82,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Todo"
           description: Successful response - returns a single `Todo`.
+        default:
+          $ref: "#/components/responses/Error"
       security:
         - KeyCloak: []
       operationId: getTodo
@@ -101,6 +107,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Todo"
+        default:
+          $ref: "#/components/responses/Error"
       operationId: updateTodo
       x-vertx-event-bus: api.todos
       tags:
@@ -111,6 +119,8 @@ paths:
       responses:
         "204":
           description: Successful response.
+        default:
+          $ref: "#/components/responses/Error"
       operationId: deleteTodo
       x-vertx-event-bus: api.todos
       tags:
@@ -323,6 +333,18 @@ components:
         tableDefinition:
           tblName: todos
           tblStorageEngine: InnoDB
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+  responses:
+    Error:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     KeyCloak:
       openIdConnectUrl: "http://todo:8080/auth/realms/todo/.well-known/openid-configuration"

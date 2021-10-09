@@ -12,6 +12,7 @@ import org.jooq.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class TodosServiceImpl extends AbstractService implements TodosService {
@@ -26,9 +27,14 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 	
 	@Override
 	public void gettodos(ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
-		dao.findAll()
+		try {
+			dao.findAll()
 				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 				.onComplete(resultHandler);
+		} catch (Throwable t) {
+			resultHandler.handle(mapErrorToServiceResponse(t));
+			LOG.error(t.getLocalizedMessage(), t);
+		}
 	}
 
 	@Override
@@ -43,38 +49,57 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 					.compose(returnedId -> dao.findOneById(id))
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
-		} catch (IllegalArgumentException iae) {
-			resultHandler.handle(mapErrorToServiceResponse(iae));
-			LOG.error(iae.getLocalizedMessage(), iae);
+		} catch (Throwable t) {
+			resultHandler.handle(mapErrorToServiceResponse(t));
+			LOG.error(t.getLocalizedMessage(), t);
 		}
 	}
 
 	@Override
 	public void getTodo(String todoId, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
 		UUID id = UUID.fromString(todoId);
-		dao.findOneById(id)
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
-				.onComplete(resultHandler);
+		try {
+			dao.findOneById(id)
+					.map(Optional::ofNullable)
+					.map(Optional::orElseThrow)
+					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+					.onComplete(resultHandler);
+		} catch (Throwable t) {
+			resultHandler.handle(this.mapErrorToServiceResponse(t));
+			LOG.error(t.getLocalizedMessage(), t);
+		}
 	}
 
 	@Override
 	public void updateTodo(String todoId, JsonObject body, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
 		UUID id = UUID.fromString(todoId);
-		dao.findOneById(id)
-				.map(JsonObject::mapFrom)
-				.map(json -> json.mergeIn(body))
-				.map(json -> json.mapTo(Todos.class))
-				.compose(dao::update)
-				.compose(i -> dao.findOneById(id))
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
-				.onComplete(resultHandler);
+		try {
+			dao.findOneById(id)
+					.map(Optional::ofNullable)
+					.map(Optional::orElseThrow)
+					.map(JsonObject::mapFrom)
+					.map(json -> json.mergeIn(body))
+					.map(json -> json.mapTo(Todos.class))
+					.compose(dao::update)
+					.compose(i -> dao.findOneById(id))
+					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+					.onComplete(resultHandler);
+		} catch (Throwable t) {
+			resultHandler.handle(this.mapErrorToServiceResponse(t));
+			LOG.error(t.getLocalizedMessage(), t);
+		}
 	}
 
 	@Override
 	public void deleteTodo(String todoId, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
-		UUID id = UUID.fromString(todoId);
-		dao.deleteById(id)
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
-				.onComplete(resultHandler);
+		try {
+			UUID id = UUID.fromString(todoId);
+			dao.deleteById(id)
+					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+					.onComplete(resultHandler);
+		} catch (Throwable t) {
+			resultHandler.handle(this.mapErrorToServiceResponse(t));
+			LOG.error(t.getLocalizedMessage(), t);
+		}
 	}
 }
