@@ -1,5 +1,9 @@
 package com.redhat.runtimes.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.redhat.runtimes.services.TodosService;
 import com.redhat.runtimes.services.TodosServiceImpl;
 import com.redhat.runtimes.services.UserService;
@@ -11,12 +15,10 @@ import io.vertx.config.ConfigStoreOptions;
 import io.vertx.config.yaml.YamlProcessor;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.core.Promise;
-import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.pgclient.PgConnectOptions;
@@ -26,11 +28,15 @@ import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
 import org.jooq.SQLDialect;
+import org.jooq.conf.*;
 import org.jooq.impl.DefaultConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Main Vert.x Verticle, entrypoint for this application
@@ -38,8 +44,6 @@ import java.nio.charset.StandardCharsets;
 public class MainVerticle extends AbstractVerticle {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(MainVerticle.class);
-	
-	public static final Configuration JOOQ_CONFIG = new DefaultConfiguration().set(SQLDialect.POSTGRES);
 	
 	private JsonObject currentConfig = new JsonObject();
 	
@@ -66,6 +70,20 @@ public class MainVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
+		// returns the ObjectMapper used by Vert.x
+		ObjectMapper mapper = io.vertx.core.json.jackson.DatabindCodec.mapper();
+		// returns the ObjectMapper used by Vert.x when pretty printing JSON
+		ObjectMapper prettyMapper = io.vertx.core.json.jackson.DatabindCodec.prettyMapper();
+		
+		// Enable (de)serialization to/from OffsetDateTime and ISO8601 strings
+		JavaTimeModule timeModule = new JavaTimeModule();
+		mapper.registerModule(timeModule);
+		mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		prettyMapper.registerModule(timeModule);
+		prettyMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		
+		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		prettyMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 		
 		LOG.info("Is Classpath resolving enabled: {}", System.getProperty("vertx.setClassPathResolvingEnabled"));
 		LOG.info("Is file caching enabled: {}", System.getProperty("vertx.setFileCachingEnabled"));
@@ -105,21 +123,20 @@ public class MainVerticle extends AbstractVerticle {
 		return configRetriever.getConfig();  // Return a completed future
 	}
 	
-	private ConfigStoreOptions initEnvironmentStore() {
-		return new ConfigStoreOptions()
-				.setType("env");
-	}
-	
 	private void loadNewConfig(ConfigChange change) {
 		this.currentConfig.mergeIn(change.getNewConfiguration());
 	}
 	
 	private void bindWebServices(SqlClient client) {
-		TodosService todoService = new TodosServiceImpl(JOOQ_CONFIG, client);
+		final Configuration jooqConfig = new DefaultConfiguration().set(SQLDialect.POSTGRES);
+		jooqConfig.settings().withRenderNameCase(RenderNameCase.LOWER)
+				.withRenderSchema(false)
+				.withRenderQuotedNames(RenderQuotedNames.NEVER);
+		TodosService todoService = new TodosServiceImpl(jooqConfig, client);
 		ServiceBinder todoSvcBinder = new ServiceBinder(vertx);
 		todoSvcBinder.setAddress("api.todos").register(TodosService.class, todoService);
 		
-		UserService userService = new UserServiceImpl(JOOQ_CONFIG, client);
+		UserService userService = new UserServiceImpl(jooqConfig, client);
 		ServiceBinder userSvcBinder = new ServiceBinder(vertx);
 		userSvcBinder.setAddress("api.user").register(UserService.class, userService);
 	}
@@ -157,8 +174,7 @@ public class MainVerticle extends AbstractVerticle {
 	private Future<Router> buildParentRouter(RouterBuilder routerBuilder) {
 		Router parentRouter = Router.router(vertx);
 		parentRouter.route().handler(ctx -> {
-			LOG.info("Request Log: {}", ctx.request().path());
-			ctx.next();
+			logRequests(ctx);
 		});
 		parentRouter.get("/swagger/swagger.json").handler(this::serveOpenAPISpec);
 		parentRouter.get("/swagger/").handler(this::filteredIndexPage);
@@ -171,6 +187,11 @@ public class MainVerticle extends AbstractVerticle {
 		parentRouter.route("/swagger/*").handler(swaggerHandler);
 		parentRouter.mountSubRouter("/api/v1", routerBuilder.createRouter());
 		return Future.succeededFuture(parentRouter);
+	}
+	
+	private void logRequests(RoutingContext ctx) {
+		LOG.info("{}: {}", ctx.request().method().toString(), ctx.request().path());
+		ctx.next();
 	}
 	
 	private void filteredIndexPage(RoutingContext ctx) {

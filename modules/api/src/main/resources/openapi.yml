@@ -153,18 +153,68 @@ components:
           x-java-field-annotations:
             - '@javax.persistence.Id'
             - '@javax.persistence.GeneratedValue(generator = "UUID")'
-            - '@javax.persistence.Column(name = "id", updatable = false, nullable = false)'
+            - '@javax.persistence.Column(name = "id", updatable = false, nullable = false, columnDefinition = "VARCHAR(40)")'
+          x-mysql-schema:
+            columnDefinition:
+              colName: id
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 40
+                  isString: false
+                  hasMore: false
+              colNotNull: true
+              primaryKey: true
         family_name:
           type: string
+          x-mysql-schema:
+            columnDefinition:
+              colName: family_name
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 128
+                  isString: false
+                  hasMore: false
+              colNotNull: true
         given_name:
           type: string
+          x-mysql-schema:
+            columnDefinition:
+              colName: given_name
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 128
+                  isString: false
+                  hasMore: false
+              colNotNull: true
         name:
           type: string
+          x-mysql-schema:
+            columnDefinition:
+              colName: name
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 128
+                  isString: false
+                  hasMore: false
+              colNotNull: true
         preferred_username:
           type: string
+          x-mysql-schema:
+            columnDefinition:
+              colName: preferred_username
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 128
+                  isString: false
+                  hasMore: false
+              colNotNull: true
       x-java-class-annotations:
         - "@javax.persistence.Entity"
         - '@javax.persistence.Table(name = "users")'
+      x-mysql-schema:
+        tableDefinition:
+          tblName: users
+          tblStorageEngine: InnoDB
     Todo:
       title: Todo
       description: A Todo list item
@@ -178,37 +228,101 @@ components:
           x-java-field-annotations:
             - '@javax.persistence.Id'
             - '@javax.persistence.GeneratedValue(generator = "UUID")'
-            - '@javax.persistence.Column(name = "id", updatable = false, nullable = false)'
+            - '@javax.persistence.Column(name = "id", updatable = false, nullable = false, columnDefinition = "VARCHAR(40)")'
+          x-mysql-schema:
+            columnDefinition:
+              colName: id
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 40
+                  isString: false
+                  hasMore: false
+              colNotNull: true
+              primaryKey: true
         title:
           type: string
+          x-mysql-schema:
+            columnDefinition:
+              colName: title
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 128
+                  isString: false
+                  hasMore: false
+              colNotNull: false
         description:
           type: string
           x-java-field-annotations:
             - '@javax.persistence.Column(columnDefinition = "TEXT")'
+          x-mysql-schema:
+            columnDefinition:
+              colName: description
+              colDataType: TEXT
+              colNotNull: false
         created:
           format: date-time
           type: string
           readOnly: true
           x-java-field-annotations:
-            - '@javax.persistence.Column(name = "created", updatable = false, nullable = false)'
-        dueDate:
+            - '@javax.persistence.Column(name = "created", updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()")'
+          x-mysql-schema:
+            columnDefinition:
+              colName: created
+              colDataType: TIMESTAMP WITH TIME ZONE
+              colNotNull: true
+              colDefault:
+                defaultValue: CURRENT_TIMESTAMP
+                isString: false
+                isNumeric: false
+                isKeyword: true
+        due_date:
           format: date-time
           type: string
+          x-java-field-annotations:
+            - '@javax.persistence.Column(name = "due_date", columnDefinition = "TIMESTAMP WITH TIME ZONE")'
+          x-mysql-schema:
+            columnDefinition:
+              colName: due_date
+              colDataType: TIMESTAMP WITH TIME ZONE
+              colNotNull: false
         complete:
           type: boolean
+          x-mysql-schema:
+            columnDefinition:
+              colName: complete
+              colDataType: BOOLEAN
+              colNotNull: true
+              colDefault:
+                defaultValue: false
+                isString: false
+                isNumeric: false
+                isKeyword: true
         author:
           type: string
           readOnly: true
+          x-mysql-schema:
+            columnDefinition:
+              colName: author
+              colDataType: VARCHAR
+              colDataTypeArguments:
+                - argumentValue: 128
+                  isString: false
+                  hasMore: false
+              colNotNull: false
       example:
         id: ec3b48dc-938d-11ea-8877-c7ea413b00cb
         title: Example Todo
         description: This is a Todo entity with a description
         created: "2020-05-14T09:00:00.000Z"
-        dueDate: "2020-05-20T09:00:00.000Z"
+        due_date: "2020-05-20T09:00:00.000Z"
         complete: false
       x-java-class-annotations:
         - "@javax.persistence.Entity"
         - '@javax.persistence.Table(name = "todos")'
+      x-mysql-schema:
+        tableDefinition:
+          tblName: todos
+          tblStorageEngine: InnoDB
   securitySchemes:
     KeyCloak:
       openIdConnectUrl: "http://todo:8080/auth/realms/todo/.well-known/openid-configuration"

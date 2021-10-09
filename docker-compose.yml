@@ -9,4 +9,4 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - "./modules/models/target/generated-resources/sql/ddl/auto:/docker-entrypoint-initdb.d"
+      - "./modules/data-access/target/schema:/docker-entrypoint-initdb.d"
