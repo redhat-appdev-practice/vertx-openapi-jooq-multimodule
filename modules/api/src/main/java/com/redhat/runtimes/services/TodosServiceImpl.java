@@ -95,11 +95,11 @@ public class TodosServiceImpl implements TodosService {
 			todo.setId(id);
 			todo.setAuthor(body.getString("author"));
 			OffsetDateTime created = OffsetDateTime.parse(body.getString("created"), DateTimeFormatter.ISO_DATE_TIME);
-			todo.setCreated(created);
+			todo.setCreated(created.toInstant());
 			todo.setComplete(Boolean.FALSE);
 			todo.setDescription(body.getString("description"));
 			OffsetDateTime dueDate = OffsetDateTime.parse(body.getString("due_date"), DateTimeFormatter.ISO_DATE_TIME);
-			todo.setDueDate(dueDate);
+			todo.setDueDate(dueDate.toInstant());
 			todo.setTitle(body.getString("title"));
 			
 			dao.insert(todo)

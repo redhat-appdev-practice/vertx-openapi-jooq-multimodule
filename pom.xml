@@ -25,6 +25,7 @@
     </pluginManagement>
   </build>
   <modules>
+    <module>modules/converters</module>
     <module>modules/data-access</module>
     <module>modules/api</module>
   </modules>

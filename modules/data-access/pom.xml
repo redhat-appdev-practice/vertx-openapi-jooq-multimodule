@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.redhat.runtimes.vertx.models</groupId>
             <artifactId>openapi-vertx-todo-models</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.jklingsporn</groupId>
@@ -33,6 +33,11 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.32</version>
+        </dependency>
+        <dependency>
+            <groupId>com.redhat.runtimes.vertx.data</groupId>
+            <artifactId>openapi-vertx-todo-converters</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -69,6 +74,26 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile-converters</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>compile-generate-jooq-code</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq-codegen-maven</artifactId>
                 <version>${jooq.version}</version>
@@ -92,6 +117,11 @@
                         <groupId>io.github.jklingsporn</groupId>
                         <artifactId>vertx-jooq-generate</artifactId>
                         <version>${vertx.jooq.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.redhat.runtimes.vertx.data</groupId>
+                        <artifactId>openapi-vertx-todo-converters</artifactId>
+                        <version>${project.version}</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -193,6 +223,9 @@
                             <interfaces>true</interfaces>
                             <daos>true</daos>
                             <fluentSetters>true</fluentSetters>
+                            <generatedAnnotation>true</generatedAnnotation>
+                            <generatedAnnotationType>DETECT_FROM_JDK</generatedAnnotationType>
+                            <generatedAnnotationDate>true</generatedAnnotationDate>
                         </generate>
                         <strategy>
                             <name>io.github.jklingsporn.vertx.jooq.generate.VertxGeneratorStrategy</name>
@@ -201,7 +234,7 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>process-sources</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>generate</goal>
                         </goals>
