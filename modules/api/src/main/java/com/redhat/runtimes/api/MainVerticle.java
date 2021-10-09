@@ -34,9 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 /**
  * Main Vert.x Verticle, entrypoint for this application
@@ -173,9 +170,7 @@ public class MainVerticle extends AbstractVerticle {
 	 */
 	private Future<Router> buildParentRouter(RouterBuilder routerBuilder) {
 		Router parentRouter = Router.router(vertx);
-		parentRouter.route().handler(ctx -> {
-			logRequests(ctx);
-		});
+		parentRouter.route().handler(this::logRequests);
 		parentRouter.get("/swagger/swagger.json").handler(this::serveOpenAPISpec);
 		parentRouter.get("/swagger/").handler(this::filteredIndexPage);
 		parentRouter.get("/swagger/index.html").handler(this::filteredIndexPage);
@@ -190,7 +185,9 @@ public class MainVerticle extends AbstractVerticle {
 	}
 	
 	private void logRequests(RoutingContext ctx) {
-		LOG.debug("{}: {}", ctx.request().method().toString(), ctx.request().path());
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("{}: {}", ctx.request().method(), ctx.request().path());
+		}
 		ctx.next();
 	}
 	
@@ -213,10 +210,10 @@ public class MainVerticle extends AbstractVerticle {
 														var processor = new YamlProcessor();
 														return processor.process(vertx, new JsonObject(), yaml);
 				                  })
-				                  .onSuccess(json -> {
+				                  .onSuccess(json ->
 					                  ctx.response()
 							                  .putHeader("Content-Type", "application/json")
-							                  .end(json.toBuffer());
-				                  });
+							                  .end(json.toBuffer())
+				                  );
 	}
 }

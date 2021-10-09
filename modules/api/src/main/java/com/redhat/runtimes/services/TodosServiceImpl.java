@@ -31,7 +31,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 			dao.findAll()
 				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 				.onComplete(resultHandler);
-		} catch (Throwable t) {
+		} catch (Exception t) {
 			resultHandler.handle(mapErrorToServiceResponse(t));
 			LOG.error(t.getLocalizedMessage(), t);
 		}
@@ -49,7 +49,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 					.compose(returnedId -> dao.findOneById(id))
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
-		} catch (Throwable t) {
+		} catch (Exception t) {
 			resultHandler.handle(mapErrorToServiceResponse(t));
 			LOG.error(t.getLocalizedMessage(), t);
 		}
@@ -64,7 +64,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 					.map(Optional::orElseThrow)
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
-		} catch (Throwable t) {
+		} catch (Exception t) {
 			resultHandler.handle(this.mapErrorToServiceResponse(t));
 			LOG.error(t.getLocalizedMessage(), t);
 		}
@@ -84,7 +84,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 					.compose(i -> dao.findOneById(id))
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
-		} catch (Throwable t) {
+		} catch (Exception t) {
 			resultHandler.handle(this.mapErrorToServiceResponse(t));
 			LOG.error(t.getLocalizedMessage(), t);
 		}
@@ -97,7 +97,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 			dao.deleteById(id)
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
-		} catch (Throwable t) {
+		} catch (Exception t) {
 			resultHandler.handle(this.mapErrorToServiceResponse(t));
 			LOG.error(t.getLocalizedMessage(), t);
 		}

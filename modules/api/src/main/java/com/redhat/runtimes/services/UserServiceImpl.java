@@ -8,8 +8,12 @@ import io.vertx.ext.web.api.service.ServiceRequest;
 import io.vertx.ext.web.api.service.ServiceResponse;
 import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserServiceImpl extends AbstractService implements UserService {
+	
+	private static final Logger LOG = LoggerFactory.getLogger(UserServiceImpl.class);
 	
 	UsersDao dao;
 	
@@ -19,8 +23,13 @@ public class UserServiceImpl extends AbstractService implements UserService {
 	
 	@Override
 	public void getUserProfile(ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
-		dao.findOneByCondition(Users.USERS.PREFERRED_USERNAME.eq(context.getUser().getString("username")))
+		try {
+			dao.findOneByCondition(Users.USERS.PREFERRED_USERNAME.eq(context.getUser().getString("username")))
 				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 				.onComplete(resultHandler);
+		} catch (Exception t) {
+			resultHandler.handle(this.mapErrorToServiceResponse(t));
+			LOG.error(t.getLocalizedMessage(), t);
+		}
 	}
 }
