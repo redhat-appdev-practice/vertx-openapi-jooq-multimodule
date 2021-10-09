@@ -74,41 +74,11 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>compile-converters</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>compile-generate-jooq-code</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.jooq</groupId>
                 <artifactId>jooq-codegen-maven</artifactId>
                 <version>${jooq.version}</version>
                 <dependencies>
                     <dependency>
-                        <!-- Use org.jooq                for the Open Source Edition
-                                 org.jooq.pro            for commercial editions with Java 17 support,
-                                 org.jooq.pro-java-11    for commercial editions with Java 11 support,
-                                 org.jooq.pro-java-8     for commercial editions with Java 8 support,
-                                 org.jooq.trial          for the free trial edition with Java 17 support,
-                                 org.jooq.trial-java-11  for the free trial edition with Java 11 support,
-                                 org.jooq.trial-java-8   for the free trial edition with Java 8 support
-                                 
-                             Note: Only the Open Source Edition is hosted on Maven Central.
-                                   Import the others manually from your distribution -->
                         <groupId>org.jooq</groupId>
                         <artifactId>jooq-meta-extensions</artifactId>
                         <version>${jooq.version}</version>
@@ -204,14 +174,14 @@
                                     <includeTypes>.*VARCHAR\(40\).*</includeTypes>
                                     <includeExpression>.*</includeExpression>
                                 </forcedType>
-                                <forcedType>
+<!--                                <forcedType>
                                     <userType>java.time.Instant</userType>
                                     <objectType>COLUMN</objectType>
                                     <converter>com.redhat.runtimes.data.access.converters.DateTimeConverter</converter>
                                     <includeTypes>.*IMESTAMP.*</includeTypes>
                                     <nullability>ALL</nullability>
                                     <includeExpression>.*</includeExpression>
-                                </forcedType>
+                                </forcedType>-->
                             </forcedTypes>
                         </database>
                         <target>

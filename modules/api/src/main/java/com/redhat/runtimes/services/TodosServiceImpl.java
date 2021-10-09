@@ -36,11 +36,16 @@ public class TodosServiceImpl implements TodosService {
 	Future<ServiceResponse> mapToServiceResponse(Object results) {
 		if (results instanceof Integer) {
 			return Future.succeededFuture(ServiceResponse.completedWithJson(new JsonObject().put("deleted", results)));
-		} else if (results instanceof List) {
-			List<Object> list = (List<Object>)results;
-			return Future.succeededFuture(ServiceResponse.completedWithJson(new JsonArray(list)));
-		} else if (results instanceof VertxPojo) {
-			return Future.succeededFuture(ServiceResponse.completedWithJson(JsonObject.mapFrom(results)));
+		} else if (results instanceof List l) {
+			JsonArray retVal = new JsonArray();
+			for (Object o: l) {
+				if (o instanceof VertxPojo p) {
+					retVal.add(JsonObject.mapFrom(p));
+				}
+			}
+			return Future.succeededFuture(ServiceResponse.completedWithJson(retVal));
+		} else if (results instanceof VertxPojo p) {
+			return Future.succeededFuture(ServiceResponse.completedWithJson(JsonObject.mapFrom(p)));
 		} else {
 			return Future.failedFuture(new InvalidClassException("A non-conforming class type was received"));
 		}
@@ -94,12 +99,16 @@ public class TodosServiceImpl implements TodosService {
 			}
 			todo.setId(id);
 			todo.setAuthor(body.getString("author"));
-			OffsetDateTime created = OffsetDateTime.parse(body.getString("created"), DateTimeFormatter.ISO_DATE_TIME);
-			todo.setCreated(created.toInstant());
+			if (body.containsKey("created")) {
+				OffsetDateTime created = OffsetDateTime.parse(body.getString("created"), DateTimeFormatter.ISO_DATE_TIME);
+				todo.setCreated(created);
+			}
 			todo.setComplete(Boolean.FALSE);
 			todo.setDescription(body.getString("description"));
-			OffsetDateTime dueDate = OffsetDateTime.parse(body.getString("due_date"), DateTimeFormatter.ISO_DATE_TIME);
-			todo.setDueDate(dueDate.toInstant());
+			if (body.containsKey("due_date")) {
+				OffsetDateTime dueDate = OffsetDateTime.parse(body.getString("due_date"), DateTimeFormatter.ISO_DATE_TIME);
+				todo.setDueDate(dueDate);
+			}
 			todo.setTitle(body.getString("title"));
 			
 			dao.insert(todo)
@@ -116,7 +125,8 @@ public class TodosServiceImpl implements TodosService {
 	public void getTodo(String todoId, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
 		UUID id = UUID.fromString(todoId);
 		dao.findOneById(id)
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
+				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+				.onComplete(resultHandler);
 	}
 
 	@Override
@@ -128,13 +138,15 @@ public class TodosServiceImpl implements TodosService {
 				.map(json -> json.mapTo(Todos.class))
 				.compose(dao::update)
 				.compose(i -> dao.findOneById(id))
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
+				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+				.onComplete(resultHandler);
 	}
 	
 	@Override
 	public void deleteTodo(String todoId, ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
 		UUID id = UUID.fromString(todoId);
 		dao.deleteById(id)
-				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
+				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
+				.onComplete(resultHandler);
 	}
 }

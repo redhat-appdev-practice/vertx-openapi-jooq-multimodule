@@ -1,5 +1,9 @@
 package com.redhat.runtimes.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.redhat.runtimes.services.TodosService;
 import com.redhat.runtimes.services.TodosServiceImpl;
 import com.redhat.runtimes.services.UserService;
@@ -30,6 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Main Vert.x Verticle, entrypoint for this application
@@ -63,6 +70,20 @@ public class MainVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
+		// returns the ObjectMapper used by Vert.x
+		ObjectMapper mapper = io.vertx.core.json.jackson.DatabindCodec.mapper();
+		// returns the ObjectMapper used by Vert.x when pretty printing JSON
+		ObjectMapper prettyMapper = io.vertx.core.json.jackson.DatabindCodec.prettyMapper();
+		
+		// Enable (de)serialization to/from OffsetDateTime and ISO8601 strings
+		JavaTimeModule timeModule = new JavaTimeModule();
+		mapper.registerModule(timeModule);
+		mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		prettyMapper.registerModule(timeModule);
+		prettyMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+		
+		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		prettyMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 		
 		LOG.info("Is Classpath resolving enabled: {}", System.getProperty("vertx.setClassPathResolvingEnabled"));
 		LOG.info("Is file caching enabled: {}", System.getProperty("vertx.setFileCachingEnabled"));

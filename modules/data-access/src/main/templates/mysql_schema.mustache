@@ -21,7 +21,7 @@ CREATE DATABASE IF NOT EXISTS `{{{defaultDatabaseName}}}` DEFAULT CHARACTER SET 
 {{#vendorExtensions}}
 {{#x-mysql-schema}}
 {{#tableDefinition}}
-CREATE TABLE {{#defaultDatabaseName}}{{{.}}}.{{/defaultDatabaseName}}{{tblName}} (
+CREATE TABLE {{#defaultDatabaseName}}"{{{.}}}".{{/defaultDatabaseName}}"{{tblName}}" (
 {{/tableDefinition}}
 {{/x-mysql-schema}}
 {{/vendorExtensions}}
@@ -29,13 +29,13 @@ CREATE TABLE {{#defaultDatabaseName}}{{{.}}}.{{/defaultDatabaseName}}{{tblName}}
   {{#vendorExtensions}}
   {{#x-mysql-schema}}
   {{#columnDefinition}}
-  {{colName}} {{colDataType}}{{#colDataTypeArguments}}{{#-first}}({{/-first}}{{#isString}}'{{/isString}}{{argumentValue}}{{#isString}}'{{/isString}}{{^-last}}, {{/-last}}{{#-last}}){{/-last}}{{/colDataTypeArguments}}{{#colUnsigned}} UNSIGNED{{/colUnsigned}}{{#colNotNull}} NOT NULL{{/colNotNull}}{{#colDefault}} DEFAULT {{#isString}}'{{defaultValue}}'{{/isString}}{{^isString}}{{defaultValue}}{{/isString}}{{/colDefault}}{{#colComment}} COMMENT '{{.}}'{{/colComment}}{{#primaryKey}},
-  PRIMARY KEY({{colName}}){{/primaryKey}}{{^-last}},{{/-last}}
+  "{{colName}}" {{colDataType}}{{#colDataTypeArguments}}{{#-first}}({{/-first}}{{#isString}}'{{/isString}}{{argumentValue}}{{#isString}}'{{/isString}}{{^-last}}, {{/-last}}{{#-last}}){{/-last}}{{/colDataTypeArguments}}{{#colUnsigned}} UNSIGNED{{/colUnsigned}}{{#colNotNull}} NOT NULL{{/colNotNull}}{{#colDefault}} DEFAULT {{#isString}}'{{defaultValue}}'{{/isString}}{{^isString}}{{defaultValue}}{{/isString}}{{/colDefault}}{{#colComment}} COMMENT '{{.}}'{{/colComment}}{{#primaryKey}},
+  PRIMARY KEY("{{colName}}"){{/primaryKey}}{{^-last}},{{/-last}}
   {{/columnDefinition}}
   {{/x-mysql-schema}}
   {{/vendorExtensions}}
   {{/vars}}
-)
+);
 
 {{/isArray}}{{/hasVars}}{{/model}}{{/models}}
 {{#hasOAuthMethods}}
