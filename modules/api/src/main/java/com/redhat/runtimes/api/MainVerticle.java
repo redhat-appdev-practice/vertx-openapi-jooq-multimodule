@@ -190,7 +190,7 @@ public class MainVerticle extends AbstractVerticle {
 	}
 	
 	private void logRequests(RoutingContext ctx) {
-		LOG.info("{}: {}", ctx.request().method().toString(), ctx.request().path());
+		LOG.debug("{}: {}", ctx.request().method().toString(), ctx.request().path());
 		ctx.next();
 	}
 	
@@ -198,8 +198,8 @@ public class MainVerticle extends AbstractVerticle {
 		vertx.fileSystem().readFile("webroot/META-INF/resources/webjars/swagger-ui/3.52.3/index.html")
 				.compose(b -> {
 					String html = b.toString(StandardCharsets.UTF_8);
-					String replacementUrl = ctx.request().absoluteURI().replaceAll("(index.html)?$", "swagger.json");
-					html = html.replaceAll("https://petstore.swagger.io/v2/swagger.json", replacementUrl);
+					String replacementUrl = ctx.request().absoluteURI().replaceAll("/(index.html)?$", "/swagger.json");
+					html = html.replaceAll("http.*swagger.json", replacementUrl);
 					ctx.response().putHeader("Content-Type", "text/html")
 							.end(html);
 					LOG.info("Replaced default swagger JSON URI: {}", replacementUrl);

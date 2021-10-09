@@ -127,6 +127,13 @@
     </dependencies>
     <build>
         <plugins>
+            <!--
+            *******
+            **
+            ** Download, extract, and include Swagger UI to be served as static content
+            **
+            *******
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -182,11 +189,7 @@
                 <configuration>
                     <redeploy>true</redeploy>
                     <verticle>com.redhat.runtimes.api.MainVerticle</verticle>
-                    <runArgs>
-                        <!-- -Dvertx.setClassPathResolvingEnabled=true -Dvertx.setFileCachingEnabled=true -->
-                        <runArg>-Dvertx.setClassPathResolvingEnabled=true</runArg>
-                        <runArg>-Dvertx.setFileCachingEnabled=true</runArg>
-                    </runArgs>
+                    <launcher>com.redhat.runtimes.Launcher</launcher>
                 </configuration>
             </plugin>
             <plugin>
