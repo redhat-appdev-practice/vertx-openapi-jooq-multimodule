@@ -24,10 +24,7 @@ import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.SqlClient;
 import org.jooq.Configuration;
 import org.jooq.SQLDialect;
-import org.jooq.conf.ParseNameCase;
-import org.jooq.conf.RenderKeywordCase;
-import org.jooq.conf.RenderNameCase;
-import org.jooq.conf.RenderQuotedNames;
+import org.jooq.conf.*;
 import org.jooq.impl.DefaultConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +37,6 @@ import java.nio.charset.StandardCharsets;
 public class MainVerticle extends AbstractVerticle {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(MainVerticle.class);
-	
-	private Configuration jooqConfig;
 	
 	private JsonObject currentConfig = new JsonObject();
 	
@@ -68,14 +63,6 @@ public class MainVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Promise<Void> startPromise) throws Exception {
-		
-		jooqConfig = new DefaultConfiguration().set(SQLDialect.POSTGRES);
-		jooqConfig.settings().withRenderQuotedNames(RenderQuotedNames.NEVER)
-				.withRenderNameCase(RenderNameCase.LOWER)
-				.withRenderQuotedNames(RenderQuotedNames.NEVER)
-				.withRenderKeywordCase(RenderKeywordCase.LOWER)
-				.withParseNameCase(ParseNameCase.LOWER)
-				.withExecuteLogging(true);
 		
 		LOG.info("Is Classpath resolving enabled: {}", System.getProperty("vertx.setClassPathResolvingEnabled"));
 		LOG.info("Is file caching enabled: {}", System.getProperty("vertx.setFileCachingEnabled"));
@@ -120,6 +107,10 @@ public class MainVerticle extends AbstractVerticle {
 	}
 	
 	private void bindWebServices(SqlClient client) {
+		final Configuration jooqConfig = new DefaultConfiguration().set(SQLDialect.POSTGRES);
+		jooqConfig.settings().withRenderNameCase(RenderNameCase.LOWER)
+				.withRenderSchema(false)
+				.withRenderQuotedNames(RenderQuotedNames.NEVER);
 		TodosService todoService = new TodosServiceImpl(jooqConfig, client);
 		ServiceBinder todoSvcBinder = new ServiceBinder(vertx);
 		todoSvcBinder.setAddress("api.todos").register(TodosService.class, todoService);

@@ -1,6 +1,5 @@
 package com.redhat.runtimes.services;
 
-import com.redhat.runtimes.data.access.tables.Todos;
 import com.redhat.runtimes.data.access.tables.Users;
 import com.redhat.runtimes.data.access.tables.daos.*;
 import io.github.jklingsporn.vertx.jooq.shared.internal.VertxPojo;
@@ -44,7 +43,7 @@ public class UserServiceImpl implements UserService {
 	
 	@Override
 	public void getUserProfile(ServiceRequest context, Handler<AsyncResult<ServiceResponse>> resultHandler) {
-		dao.findOneByCondition(Users.USERS.PREFERREDUSERNAME.eq(context.getUser().getString("username")))
+		dao.findOneByCondition(Users.USERS.PREFERRED_USERNAME.eq(context.getUser().getString("username")))
 				.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse);
 	}
 }

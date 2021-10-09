@@ -25,7 +25,6 @@
     </pluginManagement>
   </build>
   <modules>
-    <module>modules/models</module>
     <module>modules/data-access</module>
     <module>modules/api</module>
   </modules>

@@ -6,28 +6,23 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-public class UUIDConverter implements Converter {
+public class UUIDConverter implements Converter<String, UUID> {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(UUIDConverter.class);
 	
 	/**
 	 * Convert a database object to a user object
 	 *
-	 * @param databaseObject The database object
+	 * @param s The database string object
 	 * @return The user object
 	 */
 	@Override
-	public Object from(Object databaseObject) {
-		LOG.info("Object Type: {}", databaseObject.getClass().getCanonicalName());
-		if (databaseObject instanceof String s) {
-			try {
-				UUID retVal = UUID.fromString(s);
-				return retVal;
-			} catch (IllegalArgumentException iae) {
-				LOG.error("Unable to parse UUID from string '{}'", s);
-				return null;
-			}
-		} else {
+	public UUID from(String s) {
+		try {
+			UUID retVal = UUID.fromString(s);
+			return retVal;
+		} catch (IllegalArgumentException iae) {
+			LOG.error("Unable to parse UUID from string '{}'", s);
 			return null;
 		}
 	}
@@ -39,7 +34,7 @@ public class UUIDConverter implements Converter {
 	 * @return The database object
 	 */
 	@Override
-	public Object to(Object userObject) {
+	public String to(UUID userObject) {
 		if (userObject != null) {
 			return userObject.toString();
 		} else {
@@ -51,15 +46,15 @@ public class UUIDConverter implements Converter {
 	 * The database type
 	 */
 	@Override
-	public Class fromType() {
-		return UUID.class;
+	public Class<String> fromType() {
+		return String.class;
 	}
 	
 	/**
 	 * The user type
 	 */
 	@Override
-	public Class toType() {
-		return String.class;
+	public Class<UUID> toType() {
+		return UUID.class;
 	}
 }

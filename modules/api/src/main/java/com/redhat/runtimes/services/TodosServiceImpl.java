@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InvalidClassException;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -94,20 +94,16 @@ public class TodosServiceImpl implements TodosService {
 			}
 			todo.setId(id);
 			todo.setAuthor(body.getString("author"));
-			LocalDateTime created = LocalDateTime.parse(body.getString("created"), DateTimeFormatter.ISO_DATE_TIME);
+			OffsetDateTime created = OffsetDateTime.parse(body.getString("created"), DateTimeFormatter.ISO_DATE_TIME);
 			todo.setCreated(created);
 			todo.setComplete(Boolean.FALSE);
 			todo.setDescription(body.getString("description"));
-			LocalDateTime dueDate = LocalDateTime.parse(body.getString("due_date"), DateTimeFormatter.ISO_DATE_TIME);
-			todo.setDuedate(dueDate);
+			OffsetDateTime dueDate = OffsetDateTime.parse(body.getString("due_date"), DateTimeFormatter.ISO_DATE_TIME);
+			todo.setDueDate(dueDate);
 			todo.setTitle(body.getString("title"));
 			
-			dao.insertReturningPrimary(todo)
-					.compose(returnedId -> {
-						LOG.info("New Todo ID: {}", id.toString());
-						return Future.succeededFuture(id);
-					})
-					.compose(dao::findOneById)
+			dao.insert(todo)
+					.compose(returnedId -> dao.findOneById(id))
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
 		} catch (Throwable t) {
