@@ -13,7 +13,7 @@ components:
     type: chePlugin
   - id: sonarsource/sonarlint-vscode/latest
     type: chePlugin
-    properties:
+    preferences:
       sonarlint.connectedMode.connections.sonarcloud: >
         [{
           "connectionId": "sonarcloud",
