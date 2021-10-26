@@ -7,6 +7,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.api.service.ServiceResponse;
+import io.vertx.ext.web.handler.HttpException;
 import io.vertx.pgclient.PgException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.InvalidClassException;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 
@@ -57,6 +59,9 @@ public abstract class AbstractService {
 	}
 
 	Future<ServiceResponse> mapErrorToServiceResponse(Throwable throwable) {
+		if (throwable instanceof HttpException h) {
+			return Future.succeededFuture(errorResponse(HttpResponseStatus.valueOf(h.getStatusCode()), new JsonObject().put(ERROR, h.getLocalizedMessage())));
+		}
 		if (throwable instanceof PgException pge) {
 			LOG.error("Failed interaction with the database: {}", pge.getMessage());
 			if (pge.getErrorMessage().startsWith("duplicate key value violates unique constraint")) {
@@ -71,5 +76,9 @@ public abstract class AbstractService {
 		}
 		LOG.error(throwable.getLocalizedMessage(), throwable);
 		return Future.succeededFuture(errorResponse(INTERNAL_SERVER_ERROR, new JsonObject().put(ERROR, throwable.getLocalizedMessage())));
+	}
+	
+	VertxPojo handleNotFound(VertxPojo pojo) {
+		return Optional.ofNullable(pojo).orElseThrow(() -> new HttpException(404, "Not Found"));
 	}
 }

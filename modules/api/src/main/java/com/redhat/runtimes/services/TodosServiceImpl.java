@@ -60,8 +60,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 		UUID id = UUID.fromString(todoId);
 		try {
 			dao.findOneById(id)
-					.map(Optional::ofNullable)
-					.map(Optional::orElseThrow)
+					.map(this::handleNotFound)
 					.compose(this::mapToServiceResponse, this::mapErrorToServiceResponse)
 					.onComplete(resultHandler);
 		} catch (Exception t) {
@@ -75,8 +74,7 @@ public class TodosServiceImpl extends AbstractService implements TodosService {
 		UUID id = UUID.fromString(todoId);
 		try {
 			dao.findOneById(id)
-					.map(Optional::ofNullable)
-					.map(Optional::orElseThrow)
+					.map(this::handleNotFound)
 					.map(JsonObject::mapFrom)
 					.map(json -> json.mergeIn(body))
 					.map(json -> json.mapTo(Todos.class))
