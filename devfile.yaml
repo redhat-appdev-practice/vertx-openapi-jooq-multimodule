@@ -14,13 +14,13 @@ components:
   - id: sonarsource/sonarlint-vscode/latest
     type: chePlugin
     properties:
-      sonarlint.connectedMode.connections.sonarcloud: |-
+      sonarlint.connectedMode.connections.sonarcloud: |>
         [{
           "connectionId": "sonarcloud",
           "organizationKey": "infosec812-github",
           "token": "07c55d49dcae384ad64611a7529102b656d4118c"
         }]
-      sonarlint.connectedMode.project: |- 
+      sonarlint.connectedMode.project: |>
         {
           "projectKey": "vertx-openapi-jooq-multimodule",
           "connectionId": "sonarcloud"
