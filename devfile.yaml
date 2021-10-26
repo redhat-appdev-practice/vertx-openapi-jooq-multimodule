@@ -11,6 +11,28 @@ components:
     preferences:
       java.server.launchMode: Standard
     type: chePlugin
+  - id: sonarsource/sonarlint-vscode/latest
+    type: chePlugin
+    properties:
+      sonarlint.connectedMode.connections.sonarcloud: |-
+        [{
+          "connectionId": "sonarcloud",
+          "organizationKey": "infosec812-github",
+          "token": "07c55d49dcae384ad64611a7529102b656d4118c"
+        }]
+      sonarlint.connectedMode.project: |- 
+        {
+          "projectKey": "vertx-openapi-jooq-multimodule",
+          "connectionId": "sonarcloud"
+        }
+  - id: ms-kubernetes-tools/vscode-kubernetes-tools/latest
+    type: chePlugin
+  - id: redhat/vscode-openshift-connector/latest
+    type: chePlugin
+  - id: redhat/vscode-xml/latest
+    type: chePlugin
+  - id: redhat/vscode-yaml/latest
+    type: chePlugin
   - id: redhat/dependency-analytics/latest
     type: chePlugin
   - mountSources: true
@@ -41,7 +63,7 @@ components:
     command:
       - sleep
       - infinity
-    memoryLimit: 256Mi
+    memoryLimit: 128Mi
     type: dockerimage
     alias: 3scale
     image: 'registry.redhat.io/3scale-amp2/toolbox-rhel7:1.5.0'
