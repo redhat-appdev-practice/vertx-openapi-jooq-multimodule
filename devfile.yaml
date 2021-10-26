@@ -1,11 +1,11 @@
 apiVersion: 1.0.0
 metadata:
-  name: vertx-http-booster-gqgcb
+  name: api
 projects:
-  - name: vertx-openapi-jooq-multimodule
+  - name: api
     source:
-      location: 'https://github.com/redhat-appdev-practice/vertx-openapi-jooq-multimodule/archive/refs/heads/main.zip'
-      type: zip
+      location: 'https://github.com/redhat-appdev-practice/vertx-openapi-jooq-multimodule.git'
+      type: git
 components:
   - id: redhat/java11/latest
     preferences:
@@ -25,38 +25,54 @@ components:
     alias: maven
     image: 'registry.redhat.io/codeready-workspaces/plugin-java11-rhel8@sha256:d0337762e71fd4badabcb38a582b2f35e7e7fc1c9c0f2e841e339d45b7bd34ed'
     env:
-      - value: '-XX:MaxRAMPercentage=50.0 -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xms20m -Djava.security.egd=file:/dev/./urandom -Duser.home=/home/jboss'
-        name: JAVA_OPTS
       - value: $(JAVA_OPTS)
         name: MAVEN_OPTS
+      - value: '-XX:MaxRAMPercentage=50.0 -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xms20m -Djava.security.egd=file:/dev/./urandom -Duser.home=/home/jboss'
+        name: JAVA_OPTS
+  - mountSources: true
+    command:
+      - sleep
+      - infinity
+    memoryLimit: 256Mi
+    type: dockerimage
+    alias: openapi
+    image: 'docker.io/openapitools/openapi-generator-cli:latest'
+  - mountSources: true
+    command:
+      - sleep
+      - infinity
+    memoryLimit: 256Mi
+    type: dockerimage
+    alias: 3scale
+    image: 'registry.redhat.io/3scale-amp2/toolbox-rhel7:1.5.0'
 commands:
   - name: 1. Build
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+      - workdir: '${CHE_PROJECTS_ROOT}/api'
         type: exec
         command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -DskipTestsclean install'
         component: maven
   - name: 2. Run
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+      - workdir: '${CHE_PROJECTS_ROOT}/api'
         type: exec
         command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -Dvertx.disableDnsResolver=true vertx:run'
         component: maven
   - name: 3. Run in debug mode
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+      - workdir: '${CHE_PROJECTS_ROOT}/api'
         type: exec
         command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -DskipTests vertx:debug'
         component: maven
   - name: 4. Run tests
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+      - workdir: '${CHE_PROJECTS_ROOT}/api'
         type: exec
         command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -DskipTests verify '
         component: maven
   - name: 5. Log into deployment cluster
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+      - workdir: '${CHE_PROJECTS_ROOT}/api'
         type: exec
         command: |
           echo
@@ -66,9 +82,9 @@ commands:
         component: maven
   - name: 6. Deploy to OpenShift
     actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+      - workdir: '${CHE_PROJECTS_ROOT}/api'
         type: exec
-        command: 'MAVEN_OPTS="-Xmx200m" &&  mvn fabric8:deploy -Popenshift -DskipTests -Dvertx.disableDnsResolver=true'
+        command: 'MAVEN_OPTS="-Xmx200m" &&  mvn oc:apply -DskipTests -Dvertx.disableDnsResolver=true'
         component: maven
   - name: Debug remote java application
     actions:
