@@ -1,50 +1,87 @@
-schemaVersion: 2.0.0
+apiVersion: 1.0.0
 metadata:
-  name: java-maven
-  version: 1.1.0
-  displayName: Maven Java
-  description: Upstream Maven and OpenJDK 11
-  tags: ['Java', 'Maven']
-  projectType: 'maven'
-  language: 'java'
-starterProjects:
-  - name: springbootproject
-    git:
-      remotes:
-        origin: 'https://github.com/odo-devfiles/springboot-ex.git'
+  name: vertx-http-booster-gqgcb
+projects:
+  - name: vertx-openapi-jooq-multimodule
+    source:
+      location: 'https://github.com/redhat-appdev-practice/vertx-openapi-jooq-multimodule/archive/refs/heads/main.zip'
+      type: zip
 components:
-  - name: tools
-    container:
-      image: quay.io/eclipse/che-java11-maven:next
-      memoryLimit: 512Mi
-      mountSources: true
-      endpoints:
-        - name: 'http-8080'
-          targetPort: 8080
-      volumeMounts:
-        - name: m2
-          path: /home/user/.m2
-  - name: m2
-    volume: {}
+  - id: redhat/java11/latest
+    preferences:
+      java.server.launchMode: Standard
+    type: chePlugin
+  - id: redhat/dependency-analytics/latest
+    type: chePlugin
+  - mountSources: true
+    endpoints:
+      - name: 8080-tcp
+        port: 8080
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: m2
+        containerPath: /home/jboss/.m2
+    alias: maven
+    image: 'registry.redhat.io/codeready-workspaces/plugin-java11-rhel8@sha256:d0337762e71fd4badabcb38a582b2f35e7e7fc1c9c0f2e841e339d45b7bd34ed'
+    env:
+      - value: '-XX:MaxRAMPercentage=50.0 -XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xms20m -Djava.security.egd=file:/dev/./urandom -Duser.home=/home/jboss'
+        name: JAVA_OPTS
+      - value: $(JAVA_OPTS)
+        name: MAVEN_OPTS
 commands:
-  - id: mvn-package
-    exec:
-      component: tools
-      commandLine: 'mvn -Dmaven.repo.local=/home/user/.m2/repository package'
-      group:
-        kind: build
-        isDefault: true
-  - id: run
-    exec:
-      component: tools
-      commandLine: 'java -jar target/*.jar'
-      group:
-        kind: run
-        isDefault: true
-  - id: debug
-    exec:
-      component: tools
-      commandLine: 'java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${DEBUG_PORT},suspend=n -jar target/*.jar'
-      group:
-        kind: debug
-        isDefault: true
+  - name: 1. Build
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -DskipTestsclean install'
+        component: maven
+  - name: 2. Run
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -Dvertx.disableDnsResolver=true vertx:run'
+        component: maven
+  - name: 3. Run in debug mode
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -DskipTests vertx:debug'
+        component: maven
+  - name: 4. Run tests
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx200m" && mvn -Duser.home=${HOME} -DskipTests verify '
+        component: maven
+  - name: 5. Log into deployment cluster
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+        type: exec
+        command: |
+          echo
+          echo "Before you can deploy this application to an openshift cluster,"
+          echo "you must run 'oc login ...' in the maven terminal."
+          echo
+        component: maven
+  - name: 6. Deploy to OpenShift
+    actions:
+      - workdir: '${CHE_PROJECTS_ROOT}/vertx-http-booster'
+        type: exec
+        command: 'MAVEN_OPTS="-Xmx200m" &&  mvn fabric8:deploy -Popenshift -DskipTests -Dvertx.disableDnsResolver=true'
+        component: maven
+  - name: Debug remote java application
+    actions:
+      - referenceContent: |
+          {
+           "version": "0.2.0",
+           "configurations": [
+             {
+               "type": "java",
+               "name": "Debug (Attach) - Remote",
+               "request": "attach",
+               "hostName": "localhost",
+               "port": 5005
+             }]
+           }
+        type: vscode-launch
