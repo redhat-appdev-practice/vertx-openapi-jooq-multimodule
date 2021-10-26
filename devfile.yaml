@@ -55,7 +55,7 @@ components:
     command:
       - sleep
       - infinity
-    memoryLimit: 256Mi
+    memoryLimit: 128Mi
     type: dockerimage
     alias: openapi
     image: 'docker.io/openapitools/openapi-generator-cli:latest'
