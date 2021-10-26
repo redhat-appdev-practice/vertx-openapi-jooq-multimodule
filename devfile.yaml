@@ -14,17 +14,13 @@ components:
   - id: sonarsource/sonarlint-vscode/latest
     type: chePlugin
     preferences:
-      sonarlint.connectedMode.connections.sonarcloud: >
-        [{
-          "connectionId": "sonarcloud",
-          "organizationKey": "infosec812-github",
-          "token": "07c55d49dcae384ad64611a7529102b656d4118c"
-        }]
-      sonarlint.connectedMode.project: >
-        {
-          "projectKey": "vertx-openapi-jooq-multimodule",
-          "connectionId": "sonarcloud"
-        }
+      sonarlint.connectedMode.connections.sonarcloud:
+        - connectionId: sonarcloud
+          organizationKey": "infosec812-github"
+          token": "07c55d49dcae384ad64611a7529102b656d4118c"
+      sonarlint.connectedMode.project:
+        projectKey: "vertx-openapi-jooq-multimodule"
+        connectionId: "sonarcloud"
   - id: ms-kubernetes-tools/vscode-kubernetes-tools/latest
     type: chePlugin
   - id: redhat/vscode-openshift-connector/latest
@@ -39,7 +35,7 @@ components:
     endpoints:
       - name: 8080-tcp
         port: 8080
-    memoryLimit: 512Mi
+    memoryLimit: 384Mi
     type: dockerimage
     volumes:
       - name: m2
